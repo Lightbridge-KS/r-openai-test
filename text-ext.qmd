@@ -1,0 +1,108 @@
+---
+title: "Text Extraction"
+format: html
+---
+
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+here::i_am("text-ext.qmd")
+library(here)
+library(rlang)
+library(glue)
+source(here("R-NLP/myopenai.R"))
+source(here("R-NLP/gpt-nlp.R"))
+```
+
+## Main
+
+```{r}
+res1 <- gpt_extract_vec(instruction = 'Extract city name in the R vector',
+                        x = c("Hello, Bangkok", "Hi, Paris"))
+res1
+```
+
+
+## Helper
+
+```{r}
+v <- c("A", "B", "C", NA)
+```
+
+
+### Helper: Convert R vector to String 
+
+```{r rvec_to_strvec}
+rvec_to_strvec <- function(x) {
+  
+  x_surround <- ifelse(is.na(x), x, paste0('"', x, '"'))
+  x_collapsed <- paste(x_surround, collapse = ", ")
+  paste0("c(", x_collapsed, ")")
+}
+
+rvec_to_strvec(v)
+```
+
+### Helper: Convert String to R vector
+
+```{r strvec_to_rvec}
+strvec_to_rvec <- function(str) {
+  # Parse the string to an R expression
+  expr <- parse(text = str)
+  # Evaluate the expression to get the actual R vector
+  rvec <- eval(expr)
+  rvec
+}
+
+strvec_to_rvec(rvec_to_strvec(v))
+```
+
+
+```{r}
+p_sys1 <- "You are a data extraction assistant. You will be provided with a user's request and input text stored in an R vector. 
+
+Your task: extract information from the input vector according to the user's request. 
+
+Output: text result as an R vector that matches the input vector and nothing else.
+"
+```
+
+
+
+```{r}
+p_sys1 <- paste(readLines(here("prompt/prompt-sys-1.md")), collapse = "\n")
+p_sys1
+```
+### Howto: Test 1
+
+```{r}
+v2 <- rvec_to_strvec(c("Hello, Bangkok", "Hi, Paris"))
+p_user1 <- paste('Extract city name in the R vector', 
+                 v2, sep = "\n\n")
+cat(p_user1)
+```
+
+
+```{r}
+cc1 <- chat_with_gpt3(prompt_system = p_sys1, prompt_user = p_user1)
+cc1
+```
+
+### Howto: Test 2
+
+```{r}
+text1 <- rvec_to_strvec(c("0.5", "0.6", "0.55", ">0.4", "0.67", ">0.4", ">0.9", "0.6", "0.8", ">0.4", "0.55", "0.5", "<0.4", "0.1", ">0.4", ">0.5", NA, ">0.4", NA, ">0.4", NA, "0.9", ">0.4"))
+
+p_user2 <- paste('For each element do the following: if the value is greater than or equal to 0.5, return "high"; otherwise, return "low".', 
+                 text1, sep = "\n\n")
+cat(p_user2)
+```
+
+```{r}
+cc2 <- chat_with_gpt3(prompt_system = p_sys1, prompt_user = p_user2)
+strvec_to_rvec(cc2)
+```
+
+
+
+
+

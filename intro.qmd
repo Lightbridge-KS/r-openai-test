@@ -1,0 +1,33 @@
+---
+title: "R GPT"
+format: html
+---
+
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+here::i_am("intro.qmd")
+library(here)
+library(openai)
+source("R-NLP/myopenai.R")
+```
+
+```{r}
+client <- OpenAI()
+completion <- client$chat$completions$create(
+    model = "gpt-3.5-turbo",
+    messages = list(list("role" = "user", "content" = "What's up?"))
+)
+
+completion$choices[[1]]$message$content
+```
+
+```{r}
+x <- my_chat_completion(prompt_user = "hi")
+get_msg_content(x)
+```
+
+```{r}
+y <- chat_with_gpt3("Hi")
+y
+```
+
